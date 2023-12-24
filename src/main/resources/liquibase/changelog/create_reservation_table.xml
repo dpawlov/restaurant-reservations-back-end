@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="8" author="Dimitar">
+        <createTable tableName="table_info_reservations">
+            <column name="table_info_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reservation_id" type="bigint" >
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="table_info_reservations" baseColumnNames="table_info_id"
+                                 constraintName="table_info_reservations"
+                                 referencedTableName="table_info" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="table_info_reservations" baseColumnNames="reservation_id"
+                                 constraintName="reservations_table_info"
+                                 referencedTableName="reservation" referencedColumnNames="id"/>
+
+    </changeSet>
+</databaseChangeLog>

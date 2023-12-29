@@ -45,11 +45,10 @@ public class UserController {
 
     @PostMapping("/register")
     public UserDto registerUser(@RequestBody UserCreateDto userCreateDto) {
-        // checking for username exists in a database
         if (userRepository.findByUsername(userCreateDto.getUsername()) != null) {
             throw new BadRequestException("Username already taken!");
         }
-        // creating user object
+
         User user = new User();
         user.setUsername(userCreateDto.getUsername());
         user.setPassword(passwordEncoder.encode(userCreateDto.getPassword()));
@@ -64,6 +63,7 @@ public class UserController {
 
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(userLoginDto.getUsername(), userLoginDto.getPassword()));
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         Authentication getAuthenticatedUser = SecurityContextHolder.getContext().getAuthentication();

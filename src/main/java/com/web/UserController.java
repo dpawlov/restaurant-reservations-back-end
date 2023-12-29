@@ -45,34 +45,51 @@ public class UserController {
 
     @PostMapping("/register")
     public UserDto registerUser(@RequestBody UserCreateDto userCreateDto) {
-        if (userRepository.findByUsername(userCreateDto.getUsername()) != null) {
-            throw new BadRequestException("Username already taken!");
-        }
+        try {
+            LOGGER.info("Received registration request for username: {}", userCreateDto.getUsername());
 
-        User user = new User();
-        user.setUsername(userCreateDto.getUsername());
-        user.setPassword(passwordEncoder.encode(userCreateDto.getPassword()));
-        Role roles = roleRepository.findByName("ROLE_ADMIN").get();
-        user.setRoles(Collections.singleton(roles));
-        userRepository.save(user);
-        return userMapper.toDto(user);
+            if (userRepository.findByUsername(userCreateDto.getUsername()) != null) {
+                LOGGER.error("Username already taken: {}", userCreateDto.getUsername());
+                throw new BadRequestException("Username already taken!");
+            }
+
+            User user = new User();
+            user.setUsername(userCreateDto.getUsername());
+            user.setPassword(passwordEncoder.encode(userCreateDto.getPassword()));
+            Role roles = roleRepository.findByName("ROLE_ADMIN").orElseThrow(() -> new RuntimeException("Default role not found!"));
+            user.setRoles(Collections.singleton(roles));
+            userRepository.save(user);
+
+            LOGGER.info("User registered successfully: {}", user.getUsername());
+            return userMapper.toDto(user);
+        } catch (Exception e) {
+            LOGGER.error("Error registering user", e);
+            throw e;
+        }
     }
 
     @PostMapping("/login")
     public UserDto authenticateUser(@RequestBody UserLoginDto userLoginDto) {
+        try {
+            LOGGER.info("Received login request for username: {}", userLoginDto.getUsername());
 
-        Authentication authentication = authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(userLoginDto.getUsername(), userLoginDto.getPassword()));
+            Authentication authentication = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(userLoginDto.getUsername(), userLoginDto.getPassword()));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        Authentication getAuthenticatedUser = SecurityContextHolder.getContext().getAuthentication();
+            Authentication authenticatedUser = SecurityContextHolder.getContext().getAuthentication();
 
-        String username = getAuthenticatedUser.getName();
+            String username = authenticatedUser.getName();
+            LOGGER.info("User authenticated successfully: {}", username);
 
-        User byUsername = userRepository.findByUsername(username);
+            User byUsername = userRepository.findByUsername(username);
 
-        return userMapper.toDto(byUsername);
+            return userMapper.toDto(byUsername);
+        } catch (Exception e) {
+            LOGGER.error("Error authenticating user", e);
+            throw e;
+        }
     }
 }
 

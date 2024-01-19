@@ -4,10 +4,13 @@ import com.domain.Role;
 import com.domain.User;
 import com.repository.RoleRepository;
 import com.repository.UserRepository;
+import com.service.CustomUserDetailsService;
 import com.service.dto.UserCreateDto;
 import com.service.dto.UserDto;
 import com.service.dto.UserLoginDto;
+import com.service.dto.UserLoginResponse;
 import com.service.mapper.UserMapper;
+import com.utils.JwtTokenUtil;
 import com.web.errors.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +18,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,13 +38,17 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtTokenUtil jwtTokenUtil;
 
-    public UserController(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, UserMapper userMapper) {
+    public UserController(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, UserMapper userMapper, CustomUserDetailsService userDetailsService, JwtTokenUtil jwtTokenUtil) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.userMapper = userMapper;
+        this.userDetailsService = userDetailsService;
+        this.jwtTokenUtil = jwtTokenUtil;
     }
 
     @PostMapping("/register")
@@ -69,7 +77,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public UserDto authenticateUser(@RequestBody UserLoginDto userLoginDto) {
+    public UserLoginResponse authenticateUser(@RequestBody UserLoginDto userLoginDto) {
         try {
             LOGGER.info("Received login request for username: {}", userLoginDto.getUsername());
 
@@ -78,14 +86,19 @@ public class UserController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            Authentication authenticatedUser = SecurityContextHolder.getContext().getAuthentication();
+            // Generate JWT Token after successful authentication
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(userLoginDto.getUsername());
+            final String jwt = jwtTokenUtil.generateToken(userDetails.getUsername());
 
-            String username = authenticatedUser.getName();
-            LOGGER.info("User authenticated successfully: {}", username);
+            // Use your existing userMapper to convert the UserDetails to UserDto
+            UserDto userDto = userMapper.toDto(userRepository.findByUsername(userLoginDto.getUsername()));
 
-            User byUsername = userRepository.findByUsername(username);
+            // Create a new UserLoginResponse object containing both UserDto and JWT token
+            UserLoginResponse userLoginResponse = new UserLoginResponse();
+            userLoginResponse.setUserDto(userDto);
+            userLoginResponse.setJwtToken(jwt);
 
-            return userMapper.toDto(byUsername);
+            return userLoginResponse;
         } catch (Exception e) {
             LOGGER.error("Error authenticating user", e);
             throw e;

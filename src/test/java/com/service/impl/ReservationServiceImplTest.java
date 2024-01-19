@@ -4,6 +4,7 @@ import com.domain.enums.EnumDayOfWeek;
 import com.repository.ReservationRepository;
 import com.repository.RestaurantRepository;
 import com.repository.TableInfoRepository;
+import com.service.criteria.ReservationCriteria;
 import com.service.mapper.*;
 import com.service.specs.ReservationSpecificationService;
 import com.service.dto.ReservationDto;
@@ -15,11 +16,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +67,33 @@ class ReservationServiceImplTest {
         reservationService = new ReservationServiceImpl(reservationRepository, reservationCreateMapper,
                 reservationMapper, restaurantRepository, tableInfoRepository,
                 reservationSpecificationService);
+    }
+
+    @Test
+    void testFindAllWithCriteria() {
+        // Arrange
+        ReservationCriteria criteria = new ReservationCriteria();
+        criteria.setTableInfoId(1L);
+        criteria.setRestaurantId(1L);
+        criteria.setTime(LocalDate.now());
+        criteria.setCompleted(false);
+        criteria.setCustomerName("Test");
+        criteria.setPersons(4);
+
+        List<Reservation> reservations = Collections.singletonList(reservation);
+
+        when(reservationRepository.findAll(any(Specification.class))).thenReturn(reservations);
+
+        // Act
+        List<ReservationDto> result = reservationService.findAll(criteria);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.get(0).getCustomerName()).isEqualTo(DEFAULT_RESERVATION_CUSTOMER_NAME);
+        assertThat(result.get(0).getPersons()).isEqualTo(DEFAULT_RESERVATION_PERSONS_COUNT);
+
+        // Verify that the repository was called with any specification
+        verify(reservationRepository).findAll(any(Specification.class));
     }
 
     @Test
@@ -456,6 +486,37 @@ class ReservationServiceImplTest {
                 () -> reservationService.delete(reservation.getId()));
         assertEquals("Reservation with the following id: " + reservation.getId() + " does not exists in the database.",
                 exception.getMessage());
+    }
+
+    @Test
+    void testDeleteReservationAndClearTableInfos() {
+        // Arrange
+        Long reservationId = 1L;
+
+        // Creating a Reservation with associated TableInfos
+        Reservation reservation = new Reservation();
+        reservation.setId(reservationId);
+
+        TableInfo tableInfo1 = new TableInfo();
+        tableInfo1.setId(1L);
+        TableInfo tableInfo2 = new TableInfo();
+        tableInfo2.setId(2L);
+
+        List<TableInfo> tableInfos = new ArrayList<>();
+        tableInfos.add(tableInfo1);
+        tableInfos.add(tableInfo2);
+        reservation.setTableInfos(tableInfos);
+
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+        // Act
+        reservationService.delete(reservationId);
+
+        // Assert
+        assertThat(tableInfo1.getReservations()).isNull();
+        assertThat(tableInfo2.getReservations()).isNull();
+        verify(reservationRepository).findById(reservationId);
+        verify(reservationRepository).deleteById(reservationId);
     }
 
     public LocalDateTime convertInstantToLocalDateTime(Instant time) {

@@ -23,6 +23,9 @@ public class ReservationCreateDto {
     @NotNull(message = "RestaurantId cannot be empty!")
     private Long restaurantId;
 
+    @NotNull(message = "UserId cannot be empty!")
+    private Long userId;
+
     @Size(min = 1, message = "Minimum size should be at least 1!")
     private List<TableInfoDto> tables;
 
@@ -82,6 +85,14 @@ public class ReservationCreateDto {
         this.restaurantId = restaurantId;
     }
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
     @Override
     public String toString() {
         return "ReservationCreateDto{" +
@@ -91,6 +102,7 @@ public class ReservationCreateDto {
                 ", persons=" + persons +
                 ", restaurantId=" + restaurantId +
                 ", tableInfos=" + tables +
+                ", userId=" + userId +
                 '}';
     }
 }

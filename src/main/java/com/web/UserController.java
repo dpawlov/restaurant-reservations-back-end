@@ -88,7 +88,7 @@ public class UserController {
 
             // Generate JWT Token after successful authentication
             final UserDetails userDetails = userDetailsService.loadUserByUsername(userLoginDto.getUsername());
-            final String jwt = jwtTokenUtil.generateToken(userDetails.getUsername());
+            final String jwt = jwtTokenUtil.generateToken(userDetails);
 
             // Use your existing userMapper to convert the UserDetails to UserDto
             UserDto userDto = userMapper.toDto(userRepository.findByUsername(userLoginDto.getUsername()));

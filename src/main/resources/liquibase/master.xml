@@ -23,4 +23,5 @@
     <include file="liquibase\changelog\create_user.xml"/>
     <include file="liquibase\changelog\create_role.xml"/>
     <include file="liquibase\changelog\create_user_role.xml"/>
+    <include file="liquibase\changelog\add-user-fk-to-reservation.xml"/>
 </databaseChangeLog>

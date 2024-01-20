@@ -1,12 +1,10 @@
 package com.service.impl;
 
-import com.domain.Reservation;
-import com.domain.Restaurant;
-import com.domain.TableInfo;
-import com.domain.WorkingTime;
+import com.domain.*;
 import com.repository.ReservationRepository;
 import com.repository.RestaurantRepository;
 import com.repository.TableInfoRepository;
+import com.repository.UserRepository;
 import com.service.criteria.ReservationCriteria;
 import com.service.specs.ReservationSpecificationService;
 import com.service.ReservationService;
@@ -22,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityNotFoundException;
 import javax.transaction.Transactional;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
@@ -42,22 +41,27 @@ public class ReservationServiceImpl implements ReservationService {
     private final RestaurantRepository restaurantRepository;
     private final TableInfoRepository tableInfoRepository;
     private final ReservationSpecificationService reservationSpecificationService;
+    private final UserRepository userRepository;
 
     public ReservationServiceImpl(ReservationRepository reservationRepository,
-            ReservationCreateMapper reservationCreateMapper, ReservationMapper reservationMapper,
-            RestaurantRepository restaurantRepository, TableInfoRepository tableInfoRepository,
-            ReservationSpecificationService reservationSpecificationService) {
+                                  ReservationCreateMapper reservationCreateMapper, ReservationMapper reservationMapper,
+                                  RestaurantRepository restaurantRepository, TableInfoRepository tableInfoRepository,
+                                  ReservationSpecificationService reservationSpecificationService, UserRepository userRepository) {
         this.reservationRepository = reservationRepository;
         this.reservationCreateMapper = reservationCreateMapper;
         this.reservationMapper = reservationMapper;
         this.restaurantRepository = restaurantRepository;
         this.tableInfoRepository = tableInfoRepository;
         this.reservationSpecificationService = reservationSpecificationService;
+        this.userRepository = userRepository;
     }
 
     @Override
     @Transactional
     public ReservationDto create(ReservationCreateDto reservationCreateDto) {
+        User user = userRepository.findById(reservationCreateDto.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
         Reservation reservation = reservationCreateMapper.toEntity(reservationCreateDto);
 
         Restaurant currentRestaurant = restaurantRepository.findById(reservation.getRestaurant().getId()).orElseThrow(
@@ -85,6 +89,8 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         reservation.setCompleted(true);
+
+        reservation.setUser(user);
 
         reservationRepository.save(reservation);
 

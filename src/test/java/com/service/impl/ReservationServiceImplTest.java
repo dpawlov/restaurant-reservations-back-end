@@ -4,6 +4,7 @@ import com.domain.enums.EnumDayOfWeek;
 import com.repository.ReservationRepository;
 import com.repository.RestaurantRepository;
 import com.repository.TableInfoRepository;
+import com.repository.UserRepository;
 import com.service.criteria.ReservationCriteria;
 import com.service.mapper.*;
 import com.service.specs.ReservationSpecificationService;
@@ -43,6 +44,8 @@ class ReservationServiceImplTest {
     private final ReservationSpecificationService reservationSpecificationService = new ReservationSpecificationService();
 
     @Mock
+    private UserRepository userRepository;
+    @Mock
     private RestaurantRepository restaurantRepository;
     @Mock
     private TableInfoRepository tableInfoRepository;
@@ -66,7 +69,7 @@ class ReservationServiceImplTest {
 
         reservationService = new ReservationServiceImpl(reservationRepository, reservationCreateMapper,
                 reservationMapper, restaurantRepository, tableInfoRepository,
-                reservationSpecificationService);
+                reservationSpecificationService, userRepository);
     }
 
     @Test
@@ -75,6 +78,7 @@ class ReservationServiceImplTest {
         ReservationCriteria criteria = new ReservationCriteria();
         criteria.setTableInfoId(1L);
         criteria.setRestaurantId(1L);
+        criteria.setUserId(1L);
         criteria.setTime(LocalDate.now());
         criteria.setCompleted(false);
         criteria.setCustomerName("Test");
@@ -107,16 +111,20 @@ class ReservationServiceImplTest {
         restaurant.setWorkingTimes(workingTimes);
         restaurant.setNonWorkingDays(nonWorkingDays);
 
+        User user = createUser();
+
         TableInfo tableInfo = createTableInfo();
         tableInfo.setRestaurant(restaurant);
 
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(tableInfoRepository.findById(1L)).thenReturn(Optional.of(tableInfo));
         when(restaurantRepository.findById(1L)).thenReturn(Optional.of(restaurant));
         when(reservationRepository.save(any())).thenReturn(reservation);
@@ -133,6 +141,8 @@ class ReservationServiceImplTest {
         //given
         Restaurant restaurant = createNewRestaurant();
 
+        User user = createUser();
+
         List<WorkingTime> workingTimes = createWorkingTimes();
 
         restaurant.setWorkingTimes(workingTimes);
@@ -142,10 +152,12 @@ class ReservationServiceImplTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(restaurantRepository.findById(restaurant.getId())).thenReturn(Optional.of(restaurant));
         when(tableInfoRepository.findById(tableInfo.getId())).thenReturn(Optional.empty());
 
@@ -167,6 +179,8 @@ class ReservationServiceImplTest {
         Restaurant restaurant2 = createNewRestaurant();
         restaurant2.setId(2L);
 
+        User user = createUser();
+
         List<WorkingTime> workingTimes = createWorkingTimes();
 
         restaurant1.setWorkingTimes(workingTimes);
@@ -180,9 +194,11 @@ class ReservationServiceImplTest {
         tableInfos.add(tableInfo2);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(restaurantRepository.findById(any())).thenReturn(Optional.of(restaurant1));
         when(tableInfoRepository.findById(any())).thenReturn(Optional.of(tableInfo1));
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant2);
 
@@ -200,12 +216,16 @@ class ReservationServiceImplTest {
 
         tableInfo.setRestaurant(restaurant);
 
+        User user = createUser();
+
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(restaurantRepository.findById(tableInfo.getId())).thenReturn(Optional.empty());
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
@@ -225,6 +245,8 @@ class ReservationServiceImplTest {
 
         List<WorkingTime> workingTimes = createWorkingTimes();
 
+        User user = createUser();
+
         Restaurant restaurant = createNewRestaurant();
         restaurant.setWorkingTimes(workingTimes);
         restaurant.setNonWorkingDays(nonWorkingDays);
@@ -235,10 +257,12 @@ class ReservationServiceImplTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(restaurantRepository.findById(tableInfo.getId())).thenReturn(Optional.of(restaurant));
 
         //then
@@ -254,6 +278,8 @@ class ReservationServiceImplTest {
 
         List<WorkingTime> workingTimes = createWorkingTimes();
 
+        User user = createUser();
+
         Restaurant restaurant = createNewRestaurant();
         restaurant.setWorkingTimes(workingTimes);
 
@@ -263,10 +289,12 @@ class ReservationServiceImplTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(restaurantRepository.findById(tableInfo.getId())).thenReturn(Optional.of(restaurant));
 
         //then
@@ -282,6 +310,8 @@ class ReservationServiceImplTest {
 
         List<WorkingTime> workingTimes = createWorkingTimes();
 
+        User user = createUser();
+
         Restaurant restaurant = createNewRestaurant();
         restaurant.setWorkingTimes(workingTimes);
 
@@ -291,10 +321,12 @@ class ReservationServiceImplTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(restaurantRepository.findById(tableInfo.getId())).thenReturn(Optional.of(restaurant));
 
         //then
@@ -312,6 +344,8 @@ class ReservationServiceImplTest {
         List<Reservation> reservations = new ArrayList<>();
         reservations.add(reservation);
 
+        User user = createUser();
+
         Restaurant restaurant = createNewRestaurant();
         restaurant.setWorkingTimes(workingTimes);
         restaurant.setReservations(reservations);
@@ -322,10 +356,12 @@ class ReservationServiceImplTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(tableInfoRepository.findById(any())).thenReturn(Optional.of(tableInfo));
         when(restaurantRepository.findById(tableInfo.getId())).thenReturn(Optional.of(restaurant));
 
@@ -347,6 +383,8 @@ class ReservationServiceImplTest {
 
         List<WorkingTime> workingTimes = createWorkingTimes();
 
+        User user = createUser();
+
         List<Reservation> reservations = new ArrayList<>();
         reservations.add(newReservation);
 
@@ -360,10 +398,12 @@ class ReservationServiceImplTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(tableInfoRepository.findById(any())).thenReturn(Optional.of(tableInfo));
         when(restaurantRepository.findById(tableInfo.getId())).thenReturn(Optional.of(restaurant));
 
@@ -385,6 +425,8 @@ class ReservationServiceImplTest {
 
         List<WorkingTime> workingTimes = createWorkingTimes();
 
+        User user = createUser();
+
         List<Reservation> reservations = new ArrayList<>();
         reservations.add(newReservation);
 
@@ -398,10 +440,12 @@ class ReservationServiceImplTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
         //when
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(tableInfoRepository.findById(any())).thenReturn(Optional.of(tableInfo));
         when(restaurantRepository.findById(tableInfo.getId())).thenReturn(Optional.of(restaurant));
 
@@ -558,5 +602,12 @@ class ReservationServiceImplTest {
         List<NonWorkingDay> nonWorkingDays = new ArrayList<>();
         nonWorkingDays.add(nonWorkingDay);
         return nonWorkingDays;
+    }
+
+    private User createUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("test123");
+        return user;
     }
 }

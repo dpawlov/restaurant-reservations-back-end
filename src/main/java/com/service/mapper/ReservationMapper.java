@@ -11,5 +11,6 @@ public interface ReservationMapper extends BaseMapper<Reservation, ReservationDt
     @Override
     @Mapping(target = "tables", source = "tableInfos")
     @Mapping(target = "restaurantId", source = "restaurant.id")
+    @Mapping(target = "userId", source = "user.id")
     ReservationDto toDto(Reservation reservation);
 }

@@ -30,6 +30,9 @@ public class ReservationDto {
     @NotNull(message = "RestaurantId cannot be empty!")
     private Long restaurantId;
 
+    @NotNull(message = "UserId cannot be empty!")
+    private Long userId;
+
     public Long getId() {
         return id;
     }
@@ -94,7 +97,16 @@ public class ReservationDto {
         this.restaurantId = restaurantId;
     }
 
-    @Override public String toString() {
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    @Override
+    public String toString() {
         return "ReservationDto{" +
                 "id=" + id +
                 ", time=" + time +
@@ -104,6 +116,7 @@ public class ReservationDto {
                 ", persons=" + persons +
                 ", tables=" + tables +
                 ", restaurantId=" + restaurantId +
+                ", userId=" + userId +
                 '}';
     }
 }

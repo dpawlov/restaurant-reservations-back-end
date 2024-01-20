@@ -2,6 +2,7 @@ package com.service;
 
 import com.domain.User;
 import com.repository.UserRepository;
+import com.utils.CustomUserDetails;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,13 +26,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Find the user by username from the database
         User user = userRepository.findByUsername(username);
         if (user == null) {
-            throw new UsernameNotFoundException("User not exists by Username");
+            throw new UsernameNotFoundException("User not found with username: " + username);
         }
-        // Return the UserDetails object
-        return buildUserDetails(user);
+        return new CustomUserDetails(user.getId(), user.getUsername(), user.getPassword(), getAuthorities(user));
     }
 
     private UserDetails buildUserDetails(User user) {

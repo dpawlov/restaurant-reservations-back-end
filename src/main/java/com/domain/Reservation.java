@@ -25,6 +25,10 @@ public class Reservation {
             inverseJoinColumns = {@JoinColumn(name = "table_info_id", referencedColumnName = "id")})
     private List<TableInfo> tableInfos = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @JsonIgnore
     @ManyToOne()
     @JoinColumn(name = "restaurant_id")
@@ -110,6 +114,14 @@ public class Reservation {
 
     public void setPersons(int persons) {
         this.persons = persons;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     //Method which helps us to add a table to a reservation

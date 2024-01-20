@@ -8,6 +8,9 @@ import com.repository.*;
 import com.service.dto.ReservationCreateDto;
 import com.service.dto.ReservationDto;
 import com.service.mapper.ReservationCreateMapper;
+import com.utils.JwtTokenUtil;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -15,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,8 +31,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -53,6 +58,9 @@ class ReservationControllerTest {
 
     @Autowired
     private WorkingTimeRepository workingTimeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private NonWorkingDayRepository nonWorkingDayRepository;
@@ -132,12 +140,15 @@ class ReservationControllerTest {
         //given
         Restaurant restaurant = createNewRestaurant();
 
+        User user = createUser();
+
         TableInfo tableInfo = createTableInfo();
         tableInfo.setId(12L);
 
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
@@ -374,6 +385,7 @@ class ReservationControllerTest {
     void when_tryingToReserve_withATime_lessThan1Hour_beforeSomeExistingReservation() throws Exception {
         //given
         Reservation newReservation = new Reservation();
+        String jwtToken = getFakeJwtToken();
 
         newReservation.setId(2L);
         newReservation.setCustomerName("Jack");
@@ -385,6 +397,11 @@ class ReservationControllerTest {
 
         List<Reservation> reservations = new ArrayList<>();
         reservations.add(reservation);
+
+        User user = createUser();
+        user.setReservations(Set.of(newReservation));
+
+        userRepository.save(user);
 
         Restaurant restaurant = createNewRestaurant();
         restaurant.setWorkingTimes(workingTimes);
@@ -398,6 +415,7 @@ class ReservationControllerTest {
 
         newReservation.setTableInfos(tableInfos);
         newReservation.setRestaurant(restaurant);
+        newReservation.setUser(user);
 
         //when
         reservationRepository.save(reservation);
@@ -408,6 +426,7 @@ class ReservationControllerTest {
 
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -539,6 +558,13 @@ class ReservationControllerTest {
                 .andDo(print());
     }
 
+    private User createUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("Test123");
+        return user;
+    }
+
     private TableInfo createTableInfo() {
         TableInfo tableInfo = new TableInfo();
         tableInfo.setId(1L);
@@ -581,5 +607,18 @@ class ReservationControllerTest {
         List<NonWorkingDay> nonWorkingDays = new ArrayList<>();
         nonWorkingDays.add(nonWorkingDay);
         return nonWorkingDays;
+    }
+
+    private String getFakeJwtToken() {
+        String secretKey = "yourSecretKey";
+
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+
+        return Jwts.builder()
+                .setSubject("testuser")
+                .setIssuedAt(now)
+                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .compact();
     }
 }

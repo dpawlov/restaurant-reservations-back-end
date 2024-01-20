@@ -12,6 +12,8 @@ public class ReservationCriteria {
 
     private Long restaurantId;
 
+    private Long userId;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate time;
 
@@ -67,5 +69,13 @@ public class ReservationCriteria {
 
     public void setPersons(int persons) {
         this.persons = persons;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

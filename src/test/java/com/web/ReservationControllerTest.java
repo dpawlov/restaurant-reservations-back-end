@@ -8,7 +8,6 @@ import com.repository.*;
 import com.service.dto.ReservationCreateDto;
 import com.service.dto.ReservationDto;
 import com.service.mapper.ReservationCreateMapper;
-import com.utils.JwtTokenUtil;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,9 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,7 +27,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -80,6 +78,9 @@ class ReservationControllerTest {
 
     @BeforeEach
     void setUp() {
+        User user = createUser();
+        userRepository.save(user);
+
         reservation = new Reservation();
 
         reservation.setCustomerName(DEFAULT_RESERVATION_CUSTOMER_NAME);
@@ -97,7 +98,9 @@ class ReservationControllerTest {
         //given
         List<WorkingTime> workingTimes = createWorkingTimes();
         List<NonWorkingDay> nonWorkingDays = createNonWorkingDays();
+        User user = createUser();
 
+        userRepository.save(user);
         workingTimeRepository.saveAll(workingTimes);
         nonWorkingDayRepository.saveAll(nonWorkingDays);
 
@@ -115,6 +118,7 @@ class ReservationControllerTest {
         List<TableInfo> tableInfos = new ArrayList<>();
         tableInfos.add(tableInfo);
 
+        reservation.setUser(user);
         reservation.setTableInfos(tableInfos);
         reservation.setRestaurant(restaurant);
 
@@ -124,8 +128,11 @@ class ReservationControllerTest {
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(reservation);
 
+        String jwtToken = getJwtToken();
+
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -154,8 +161,11 @@ class ReservationControllerTest {
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(reservation);
 
+        String jwtToken = getJwtToken();
+
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -192,8 +202,11 @@ class ReservationControllerTest {
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(reservation);
 
+        String jwtToken = getJwtToken();
+
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -235,8 +248,11 @@ class ReservationControllerTest {
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(reservation);
 
+        String jwtToken = getJwtToken();
+
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -280,8 +296,11 @@ class ReservationControllerTest {
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(reservation);
 
+        String jwtToken = getJwtToken();
+
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -325,8 +344,11 @@ class ReservationControllerTest {
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(reservation);
 
+        String jwtToken = getJwtToken();
+
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -369,10 +391,13 @@ class ReservationControllerTest {
         restaurantRepository.save(restaurant);
         tableInfoRepository.save(tableInfo);
 
+        String jwtToken = getJwtToken();
+
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(newReservation);
 
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -385,7 +410,6 @@ class ReservationControllerTest {
     void when_tryingToReserve_withATime_lessThan1Hour_beforeSomeExistingReservation() throws Exception {
         //given
         Reservation newReservation = new Reservation();
-        String jwtToken = getFakeJwtToken();
 
         newReservation.setId(2L);
         newReservation.setCustomerName("Jack");
@@ -399,9 +423,6 @@ class ReservationControllerTest {
         reservations.add(reservation);
 
         User user = createUser();
-        user.setReservations(Set.of(newReservation));
-
-        userRepository.save(user);
 
         Restaurant restaurant = createNewRestaurant();
         restaurant.setWorkingTimes(workingTimes);
@@ -418,11 +439,14 @@ class ReservationControllerTest {
         newReservation.setUser(user);
 
         //when
+        userRepository.save(user);
         reservationRepository.save(reservation);
         restaurantRepository.save(restaurant);
         tableInfoRepository.save(tableInfo);
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(newReservation);
+
+        String jwtToken = getJwtToken();
 
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -451,6 +475,8 @@ class ReservationControllerTest {
         List<Reservation> reservations = new ArrayList<>();
         reservations.add(reservation);
 
+        User user = createUser();
+
         Restaurant restaurant = createNewRestaurant();
         restaurant.setWorkingTimes(workingTimes);
         restaurant.setReservations(reservations);
@@ -465,14 +491,18 @@ class ReservationControllerTest {
         newReservation.setRestaurant(restaurant);
 
         //when
+        userRepository.save(user);
         reservationRepository.save(reservation);
         restaurantRepository.save(restaurant);
         tableInfoRepository.save(tableInfo);
 
         ReservationCreateDto reservationCreateDto = reservationCreateMapper.toDto(newReservation);
 
+        String jwtToken = getJwtToken();
+
         ResultActions response = mockMvc.perform(post("/api/reservation")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
                 .content(objectMapper.writeValueAsBytes(reservationCreateDto)));
 
         //then
@@ -490,7 +520,10 @@ class ReservationControllerTest {
         //when
         reservationRepository.saveAll(reservations);
 
-        ResultActions response = mockMvc.perform(get("/api/reservation"));
+        String jwtToken = getJwtToken();
+
+        ResultActions response = mockMvc.perform(get("/api/reservation")
+                .header("Authorization", "Bearer " + jwtToken));
 
         //then
         response.andExpect(status().isOk())
@@ -504,7 +537,10 @@ class ReservationControllerTest {
         reservation.setId(1L);
         reservationRepository.save(reservation);
 
-        ResultActions response = mockMvc.perform(get("/api/reservation/{reservationId}", reservation.getId()));
+        String jwtToken = getJwtToken();
+
+        ResultActions response = mockMvc.perform(get("/api/reservation/{reservationId}", reservation.getId())
+                .header("Authorization", "Bearer " + jwtToken));
 
         response.andExpect(status().isOk())
                 .andDo(print())
@@ -523,8 +559,12 @@ class ReservationControllerTest {
         updatedReservation.setCustomerPhone("3598888888");
         updatedReservation.setTime(Instant.now());
         updatedReservation.setRestaurantId(1L);
+        updatedReservation.setUserId(1L);
+
+        String jwtToken = getJwtToken();
 
         ResultActions response = mockMvc.perform(put("/api/reservation")
+                .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsBytes(updatedReservation)));
 
@@ -539,7 +579,10 @@ class ReservationControllerTest {
         //when
         reservationRepository.save(reservation);
 
-        ResultActions response = mockMvc.perform(delete("/api/reservation/{reservationId}", reservation.getId()));
+        String jwtToken = getJwtToken();
+
+        ResultActions response = mockMvc.perform(delete("/api/reservation/{reservationId}", reservation.getId())
+                .header("Authorization", "Bearer " + jwtToken));
 
         //then
         response.andExpect(status().isOk())
@@ -551,7 +594,10 @@ class ReservationControllerTest {
         //when
         reservation.setId(11L);
 
-        ResultActions response = mockMvc.perform(delete("/api/reservation/{reservationId}", reservation.getId()));
+        String jwtToken = getJwtToken();
+
+        ResultActions response = mockMvc.perform(delete("/api/reservation/{reservationId}", reservation.getId())
+                .header("Authorization", "Bearer " + jwtToken));
 
         //then
         response.andExpect(status().isNotFound())
@@ -561,7 +607,8 @@ class ReservationControllerTest {
     private User createUser() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("Test123");
+        user.setUsername("testuser");
+        user.setPassword("dummyPass");
         return user;
     }
 
@@ -609,16 +656,17 @@ class ReservationControllerTest {
         return nonWorkingDays;
     }
 
-    private String getFakeJwtToken() {
-        String secretKey = "yourSecretKey";
-
+    private String getJwtToken() {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
+        long expMillis = nowMillis + 3600000;
+        Date exp = new Date(expMillis);
 
         return Jwts.builder()
                 .setSubject("testuser")
                 .setIssuedAt(now)
-                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .setExpiration(exp)
+                .signWith(SignatureAlgorithm.HS256, "yourSecretKey")
                 .compact();
     }
 }

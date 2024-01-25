@@ -471,6 +471,9 @@ class ReservationServiceImplTest {
         //when
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
 
+        User user = createUser();
+        userRepository.save(user);
+        reservation.setUser(user);
         reservation.setCustomerName("Nick");
 
         ReservationDto expectedReservation = reservationService.updateReservation(reservationMapper.toDto(reservation));
@@ -483,7 +486,9 @@ class ReservationServiceImplTest {
     void delete() {
         //when
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
-
+        User user = createUser();
+        userRepository.save(user);
+        reservation.setUser(user);
         reservationService.delete(reservation.getId());
 
         //then
@@ -508,6 +513,7 @@ class ReservationServiceImplTest {
     @Test()
     void update_withInvalidId_expectNotFoundException() {
         //given
+
         reservation.setId(null);
 
         //when
@@ -516,7 +522,7 @@ class ReservationServiceImplTest {
         //then
         Exception exception = assertThrows(NotFoundException.class,
                 () -> reservationService.updateReservation(reservationMapper.toDto(reservation)));
-        assertEquals("Reservation with the following id: " + reservation.getId() + " does not exists in the database.",
+        assertEquals("Reservation with the following id: " + reservation.getId() + " does not exist in the database.",
                 exception.getMessage());
     }
 
@@ -540,6 +546,10 @@ class ReservationServiceImplTest {
         // Creating a Reservation with associated TableInfos
         Reservation reservation = new Reservation();
         reservation.setId(reservationId);
+
+        User user = createUser();
+        userRepository.save(user);
+        reservation.setUser(user);
 
         TableInfo tableInfo1 = new TableInfo();
         tableInfo1.setId(1L);

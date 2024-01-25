@@ -12,12 +12,17 @@ import com.service.dto.ReservationCreateDto;
 import com.service.dto.ReservationDto;
 import com.service.mapper.ReservationCreateMapper;
 import com.service.mapper.ReservationMapper;
+import com.utils.CustomUserDetails;
+import com.utils.JwtTokenUtil;
 import com.web.errors.BadRequestException;
 import com.web.errors.NotFoundException;
 import com.utils.TimeConverterUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
@@ -126,7 +131,19 @@ public class ReservationServiceImpl implements ReservationService {
 
         Reservation currentReservation = reservationRepository.findById(reservationDto.getId()).orElseThrow(
                 () -> new NotFoundException(
-                        "Reservation with the following id: " + reservationDto.getId() + " does not exists in the database."));
+                        "Reservation with the following id: " + reservationDto.getId() + " does not exist in the database."));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new IllegalStateException("Authentication principal not found");
+        }
+
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userIdFromPrincipal = customUserDetails.getId();
+
+        if (!currentReservation.getUser().getId().equals(userIdFromPrincipal)) {
+            throw new AccessDeniedException("User not authorized to edit this reservation");
+        }
 
         currentReservation.setCustomerName(reservationDto.getCustomerName());
         currentReservation.setCustomerPhone(reservationDto.getCustomerPhone());
@@ -145,12 +162,23 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     public void delete(Long reservationId) {
 
-        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(() -> new NotFoundException(
+        Reservation currentReservation  = reservationRepository.findById(reservationId).orElseThrow(() -> new NotFoundException(
                 "Reservation with the following id: " + reservationId + " does not exists in the database."));
 
-        if (Objects.nonNull(reservation)) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new IllegalStateException("Authentication principal not found");
+        }
 
-            List<TableInfo> tableInfos = reservation.getTableInfos();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userIdFromPrincipal = customUserDetails.getId();
+
+        if (!currentReservation.getUser().getId().equals(userIdFromPrincipal)) {
+            throw new AccessDeniedException("User not authorized to delete this reservation");
+        }
+
+        if (Objects.nonNull(currentReservation )) {
+            List<TableInfo> tableInfos = currentReservation .getTableInfos();
             for (Iterator<TableInfo> iterator = tableInfos.iterator(); iterator.hasNext(); ) {
                 TableInfo tableInfo = iterator.next();
                 tableInfo.setReservations(null);

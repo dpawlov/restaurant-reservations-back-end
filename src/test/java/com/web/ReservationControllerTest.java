@@ -551,15 +551,18 @@ class ReservationControllerTest {
     @Test
     void updateReservation() throws Exception {
         //when
+        User user = createUser();
+        userRepository.save(user);
+        reservation.setUser(user);
         reservationRepository.save(reservation);
 
         ReservationDto updatedReservation = new ReservationDto();
-        updatedReservation.setId(1L);
+        updatedReservation.setId(6L);
         updatedReservation.setCustomerName("Nick");
         updatedReservation.setCustomerPhone("3598888888");
         updatedReservation.setTime(Instant.now());
         updatedReservation.setRestaurantId(1L);
-        updatedReservation.setUserId(1L);
+        updatedReservation.setUserId(user.getId());
 
         String jwtToken = getJwtToken();
 
@@ -577,6 +580,9 @@ class ReservationControllerTest {
     @Test
     void deleteReservation() throws Exception {
         //when
+        User user = createUser();
+        userRepository.save(user);
+        reservation.setUser(user);
         reservationRepository.save(reservation);
 
         String jwtToken = getJwtToken();
